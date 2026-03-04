@@ -263,26 +263,58 @@ ggplot(data = drought_exp_clean,
 
 # model 0: null model
 
+model0 <- lm(
+  total_g ~ 1, 
+  data = drought_exp_clean
+)
 
 # model 1: all predictors
 
+model1 <- lm(
+  total_g ~ sla + water_treatment + species_name,
+  data = drought_exp_clean
+)
 
 # model 2: SLA and water treatment
 
+model2 <- lm( 
+  total_g ~ sla + water_treatment,
+  data = drought_exp_clean)
 
 # model 3: SLA and species
 
+model3 <- lm(
+  total_g ~ sla + species_name,
+  data = drought_exp_clean
+)
 
 # model 4: water treatment and species
 
+model4 <- lm(
+  total_g ~ water_treatment + species_name,
+  data = drought_exp_clean
+)
 
 # model 5: SLA
 
+model5 <- lm(
+  total_g ~ sla, 
+  data = drought_exp_clean
+)
 
 # model 6: water treatment
 
+model6 <- lm(
+  total_g ~ water_treatment,
+  data = drought_exp_clean
+)
 
 # model 7: species
+
+model7 <- lm(
+  total_g ~ species_name,
+  data = drought_exp_clean
+)
 
 ```
 
@@ -292,25 +324,64 @@ Insert code to use the `AICc()` function to calculate the AIC for each model.
 
 Arrange by decreasing AIC.
 
+```{r}
+#| label: model selection
 
+AICc(
+  model0, 
+  model1,
+  model2,
+  model3,
+  model4,
+  model5,
+  model6,
+  model7
+) |> 
+  arrange(AICc) # arrange by descending AICc 
 
+```
+
+`model4` is the best model because it has the lowest AICc, and best describes the variation in plant mass. 
+In this particular scenario the best predictors that describe variation in plant mass (g) are water treatment and species, not specific leaf area. 
 
 ## Model diagnostics
 
 Insert code to look at the diagnostic plots for the best model.
 
+```{r}
+#| label: residual plots for model 4 
+
+par(mfrow = c(2, 2)) # displays plots in 2x2 grid
+plot(model4) # plotting model 4 diagnostic plots 
 
 
+```
 
+Diagnotsic plots look good. 
+
+Resaiduals (standing in for errors) look normally distributed based on QQ plot. 
+
+Residuals look homoscedastic (have constant avariance) based on Residuals vs. Fitted plot and Scale-Location plot. 
+
+No outliers influencing model estimates of coefficients.
 
 ## Summary
 
 Insert code to display the summary for the best model. 
 
+```{r}
+#| label: summary of model 4
+
+summary(model4)
+
+```
 
 
-**What are the reference levels?**  
+**What are the reference levels?** (whatever doesnt show up)
 
+Drought stressed is the reference level for treatment. (has the lowest mass compared to well-watered)
+
+Lotus scoparius is the rference for species (has the lowest mass of all the species)
 
 
 **What does the `(Intercept)` represent?**  
@@ -334,15 +405,15 @@ Insert code to display the summary for the best model.
 
 **What is the best model?**
 
-[insert your response here]
+The best model includes water treatment and species as predictors
 
 **How much variation in the response (total mass, in grams) does this model explain?**
 
-[insert your response here]
+this kodels explains 72% of the variation in plant mass. 
 
 **How do we interpret the effects of the predictors on the response variable (again, total mass in grams)?**
 
-[insert your response here]
+Plant mass differs across water treatments and species. 
 
 # 4. Model predictions
 
@@ -352,59 +423,111 @@ Rename the `x` column and `group` column to match the original data frame (`drou
 
 Look at the object before plotting.
 
+```{r}
+#| label: generating predictions
+
+preds <- ggpredict(
+  model4, # model object 
+  terms = c("water_treatment", "species_name") # predictors 
+) |> 
+  # rename columns
+  rename(water_treatment = x,
+         species_name = group)
+
+# each row represents a model prediction for the mean plant mass for a species in a given water treatment
+
+```
 
 
 # 5. Final figure
 
 Create a clean, publication ready figure depicting predictions for the best model and the underlying data.
 
+```{r}
+#| label: final publication figure
+#| fig-height: 6
+#| fig-width: 12
+
+ggplot(data = drought_exp_clean,
+       aes(x = water_treatment,
+           y = total_g,
+           color = water_treatment)) + 
+  geom_jitter(height = 0,
+              width = 0.2,
+              alpha = 0.5, # slightly transparent
+              shape = 21) + # use open circle
+  geom_pointrange(data = preds, 
+                  aes(x = water_treatment,
+                      y = predicted,
+                      ymin = conf.low,
+                      ymax = conf.high)) +
+  scale_color_manual(values = c(
+    "Drought Stressed" = ds_col,
+    "Well watered" = ww_col
+  )) +
+  stat_summary(fun = mean,
+               geom = "point",
+               color = "red",
+               size = 2) +
+  scale_x_discrete(labels = label_wrap(10)) + 
+  labs(x = "Treatment",
+       y = "Plant mass (g)") + 
+  facet_wrap(~ species_name,
+             nrow = 1) + # everything on the same row
+  theme(legend.position = "none")
+
+```
+
+means are in red, model predictions are in black. reason the means are different than predictions is because the predictions take into account the different species and treatments. model accounts for variation in other species. 
 
 # 6. Writing
 
 ## Figure caption
 
-
-
-
-
-
+**Figure 4. Plant mass (g) differs accross species and treatments.**
+Open circles represent individuals in each treatment (red: drought stressed, blue: well watered). Panels depict different species. Opaque points represent model predictions for plant mass, and bars represemnt a 95% confidence intervals of model predictions. Data source: Valliere, Justin; Zhang, Jacqueline; Sharifi, M.; Rundel, Philip (2019). Data from: Can we condition native plants to increase drought tolerance and improve restoration success? [Dataset]. Dryad. [https://doi.org/10.5061/dryad.v0861f7](https://doi.org/10.5061/dryad.v0861f7)
 
 
 ## Basic components of test
 
 **predictors**  
 
+treatment and species
 
 **response**  
-
+plant mass (g)
 
 **test**  
-
+linear model (multiple linear regression)
 
 **distribution**  
-
+F 
 
 **parameters (degrees of freedom)**  
+7, 62
 
-
-**test statistic**
-
+**test statistic** (f-stat)
+27.08
 
 **R^2^**  
-
+0.73
 
 **p-value**   
-
+p < 0.001 
 
 **significance level**  
-
+$\alpha$ = 0.05 
 
 **reference level(s)**  
-
+Drought stressed, and well watered
 
 ## Written communication
 
+
+
 ### Methods
+
+We used linear models to determine the predictive relationship bnetween specific leaf area (cm^2^/g), treatment, and species on plant mass (g). We chose the simplest model that explained the most variation in plant mass using Akaike's Information Criterion (AIC). We evaluated model assumptions for the simpolest model chosen using AIC forof normally distributed errors (residuals) using QQ plots and homoscedastic erros (errors) using Residuals vs Fitted and Scale-Locations plots. 
 
 #### Goal of analysis
 
@@ -417,7 +540,7 @@ Create a clean, publication ready figure depicting predictions for the best mode
 
 ### Results
 
-
+We found that the simplest model decribing variation and plant mass included species and treatment (linear model: F(7, 62) = 27.08, p < 0.001, $\alpha$ = 0.05, adjusted R^2^ = 0.73). 
 
 
 
