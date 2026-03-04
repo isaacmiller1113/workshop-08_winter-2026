@@ -11,6 +11,8 @@ execute:
   warning: false # use th is to make sure warnings don't show upl
 ---
 
+[deployed html url](https://isaacmiller1113.github.io/workshop-08_winter-2026/code/workshop-code.html)
+
 In this workshop, we will answer the question: How do specific leaf area, water treatment, and species influence plant mass?  
 
 **Specific leaf area** is a continuous variable measured in cm^2^/g.  
@@ -131,8 +133,6 @@ str(drought_exp_clean)
 
 ```
 
-
-
 Insert code to display 10 random rows from the data frame here.  
 
 
@@ -146,7 +146,6 @@ slice_sample(
 ```
 
 
-
 # 3. Visualizing data
 
 ## What is the relationship between SLA and plant mass?  
@@ -158,7 +157,20 @@ Label the axes with units where appropriate.
 Add a title describing the relationship (e.g. as SLA increases, total mass ______). 
 
 
+```{r}
+#| label: SLA and plant mass plot 
 
+ggplot(data = drought_exp_clean,
+       aes(x = sla,
+           y = total_g)) + 
+  geom_point(color = "forestgreen") + 
+  labs(x = "Specific leaf area (cm\U00B2/g)",
+       y = "Plant mass (g)",
+       title = "As SLA increases, total mass also increases") + 
+  theme(plot.title.position = "plot")
+
+
+```
 
 
 ## What are the differences in total mass between water treatments?
@@ -170,9 +182,26 @@ Label the axes with units where appropriate.
 Add a title describing the differences in (mean or median) plant mass between water treatments.
 
 
+```{r}
+#| label: comparing mass between water treatments
 
+ggplot(data = drought_exp_clean,
+      aes(x = water_treatment,
+          y = total_g,
+          color = water_treatment)) + 
+  geom_jitter(height = 0,
+              width = 0.3) + 
+  scale_color_manual(values = c(
+    "Drought stressed" = ds_col,
+    "Well watrered" = ww_col
+  )) +
+  labs(x = "Treatment",
+       y = "Plant Mass (g)",
+       title = "Well watered plants have more mass than drought stressed plants") +
+  theme(legend.position = "none",
+        plot.title.position = "plot")
 
-
+```
 
 
 ## What are the differences in total mass between species?
@@ -185,11 +214,31 @@ Add a title describing the differences in (mean or median) plant mass between sp
 
 Bonus: order the x-axis by decreasing mean plant mass _and_ wrap the long species names using the `label_wrap()` function from the `scales` package.
 
+```{r} 
+#| label: plant mass by species
 
+ggplot(data = drought_exp_clean,
+       aes(x = reorder(species_name, -total_g), # reorder a factor, 
+           y = total_g,
+           color = species_name)) + 
+  geom_jitter(height = 0,
+              width = 0.2) + 
+  scale_color_manual(values = c(
+    "Grindelia camporum" = gricam_col,
+    "Eschscholzia californica" = esccal_col,
+    "Stipa pulchra" = stipul_col,
+    "Encelia californica" = enccal_col,
+    "Salvia leucophylla" = salleu_col,
+    "Penstemon centranthifolius" = pencen_col,
+    "Lotus scoparius" = lotsco_col
+  )) + 
+  scale_x_discrete(labels = label_wrap(10)) +
+  labs( x = "Species", 
+        y = "Plant mass (g)",
+        title = "Plant mass differs across species") + 
+  theme(legend.position = "none") 
 
-
-
-
+```
 
 
 # 4. Fitting models
